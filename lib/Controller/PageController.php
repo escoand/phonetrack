@@ -4339,6 +4339,98 @@ class PageController extends Controller {
 	 * @PublicPage
 	 * @NoCSRFRequired
 	 */
+	public function APIgetLastPositionsGeoJsonPublic($sessionid) {
+		$response = array(
+			'type' => 'FeatureCollection',
+			'features' => array(),
+		);
+		// check if session exists
+		$dbtoken = null;
+		$sqlget = '
+			SELECT publicviewtoken, token
+			FROM *PREFIX*phonetrack_sessions
+			WHERE publicviewtoken='.$this->db_quote_escape_string($sessionid).'
+				  AND public=1 ;';
+		$req = $this->dbconnection->prepare($sqlget);
+		$req->execute();
+		while ($row = $req->fetch()){
+			$dbtoken = $row['token'];
+			$dbpubtoken = $row['publicviewtoken'];
+		}
+		$req->closeCursor();
+
+		// session exists
+		if ($dbtoken !== null) {
+			// get list of devices
+			$devices = [];
+			$sqldev = '
+				SELECT id
+				FROM *PREFIX*phonetrack_devices
+				WHERE sessionid='.$this->db_quote_escape_string($dbtoken).' ;';
+			$req = $this->dbconnection->prepare($sqldev);
+			$req->execute();
+			while ($row = $req->fetch()){
+				array_push($devices, $row['id']);
+			}
+			$req->closeCursor();
+
+			foreach ($devices as $devid) {
+				$name = null;
+				$sqlname = '
+					SELECT name
+					FROM *PREFIX*phonetrack_devices
+					WHERE sessionid='.$this->db_quote_escape_string($dbtoken).'
+						  AND id='.$this->db_quote_escape_string($devid).' ;';
+				$req = $this->dbconnection->prepare($sqlname);
+				$req->execute();
+				$col = '';
+				while ($row = $req->fetch()){
+					$name = $row['name'];
+				}
+				$req->closeCursor();
+
+				$entry = [];
+				$sqlget = '
+					SELECT lat, lon, timestamp, batterylevel, useragent,
+						   satellites, accuracy, altitude, speed, bearing
+					FROM *PREFIX*phonetrack_points
+					WHERE deviceid='.$this->db_quote_escape_string($devid).'
+					ORDER BY timestamp DESC LIMIT 1 ;';
+				$req = $this->dbconnection->prepare($sqlget);
+				$req->execute();
+				while ($row = $req->fetch()){
+					$result['features'][] = array(
+						'type' => 'Feature',
+						'geometry' => array(
+							'type' => 'Point',
+							'coordinates' => array(
+								(float) $lon,
+								(float) $lat,
+							),
+						),
+						'properties' => array(
+							'id' => $deviceid,
+							'label' => $deviceid,
+						),
+					);
+				}
+				$req->closeCursor();
+			}
+		}
+		$response = new DataResponse($result);
+		$csp = new ContentSecurityPolicy();
+		$csp->addAllowedImageDomain('*')
+			->addAllowedMediaDomain('*')
+			->addAllowedConnectDomain('*');
+		$response->setContentSecurityPolicy($csp);
+		return $response;
+	}
+
+	/**
+	 * @NoAdminRequired
+	 * @PublicPage
+	 * @NoCSRFRequired
+	 */
 	public function APIgetPositionsPublic($sessionid, $limit=null) {
 		$result = [];
 		// check if session exists
