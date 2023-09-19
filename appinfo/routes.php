@@ -30,6 +30,7 @@ return [
         ['name' => 'page#getSessions', 'url' => '/getSessions', 'verb' => 'POST'],
         ['name' => 'page#APIgetSessions', 'url' => '/api/getsessions', 'verb' => 'GET'],
         ['name' => 'page#APIgetLastPositionsPublic', 'url' => '/api/getlastpositions/{sessionid}', 'verb' => 'GET'],
+        ['name' => 'page#APIgetLastPositionsGeoJsonPublic', 'url' => '/api/getlastpositions/{sessionid}/geojson', 'verb' => 'GET'],
         ['name' => 'page#APIgetPositionsPublic', 'url' => '/api/getpositions/{sessionid}', 'verb' => 'GET'],
         ['name' => 'page#APIgetLastPositionsUser', 'url' => '/api/getuserlastpositions/{sessionid}', 'verb' => 'GET'],
         ['name' => 'page#APIgetPositionsUser', 'url' => '/api/getuserpositions/{sessionid}', 'verb' => 'GET'],
